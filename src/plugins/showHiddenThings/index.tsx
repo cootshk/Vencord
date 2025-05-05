@@ -628,16 +628,24 @@ export default definePlugin({
         </Tooltip>
     ), { noop: true }),
 
-    can: (..._) => false, // overwritten in start()
+    // stubs for real permission checks
+    can: (..._) => false,
 
     start() {
-        this.can = PermissionStore.can; // save original can function
 
         // ["can", "canAccessGuildSettings", "canAccessMemberSafetyPage", "canBasicChannel", "canImpersonateRole", "canManageUser", "canWithPartialContext", "isRoleHigher"]
         var perms: string[] = ["can", "canWithPartialContext"];
-        if (settings.store.showServerSettings) { perms.push("canAccessGuildSettings"); perms.push("canAccessMemberSafetyPage"); perms.push("canManageUser"); }
-        // if (settings.store.showMemberPage) { perms.push("canAccessMemberSafetyPage"); perms.push("canManageUser"); }
+        if (settings.store.showServerSettings) {
+            perms = perms.concat([
+                "canAccessGuildSettings",
+                "canAccessMemberSafetyPage",
+                "canManageUser",
+                "canImpersonateRole",
+                "isRoleHigher"
+            ]);
+        }
         perms.forEach(a => {
+            this[a] = PermissionStore.__proto__[a];
             PermissionStore.__proto__[a] = () => true;
         });
         console.log("Permission store: ", PermissionStore);
