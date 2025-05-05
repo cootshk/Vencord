@@ -54,7 +54,7 @@ export const settings = definePluginSettings({
     showInvitesPaused: opt("Show the invites paused tooltip in the server list."),
     showModView: opt("Show the member mod view context menu item in all servers."),
     showServerSettings: opt("Show the server settings button."),
-    showMemberPage: opt("Show the member page in server settings."),
+    // showMemberPage: opt("Show the member page in server settings."),
     hideUnreads: opt("Hide the unread badge."),
     showMode: {
         description: "The mode used to display hidden channels.",
@@ -635,9 +635,8 @@ export default definePlugin({
 
         // ["can", "canAccessGuildSettings", "canAccessMemberSafetyPage", "canBasicChannel", "canImpersonateRole", "canManageUser", "canWithPartialContext", "isRoleHigher"]
         var perms: string[] = ["can", "canWithPartialContext"];
-        if (settings.store.showServerSettings) { perms.push("canAccessGuildSettings"); }
-        if (settings.store.showMemberPage) { perms.push("canAccessMemberSafetyPage"); perms.push("canManageUser"); }
-        // ["canAccessGuildSettings", "canAccessMemberSafetyPage", "canBasicChannel", "canImpersonateRole", "canManageUser", "canWithPartialContext", "isRoleHigher"]
+        if (settings.store.showServerSettings) { perms.push("canAccessGuildSettings"); perms.push("canAccessMemberSafetyPage"); perms.push("canManageUser"); }
+        // if (settings.store.showMemberPage) { perms.push("canAccessMemberSafetyPage"); perms.push("canManageUser"); }
         perms.forEach(a => {
             PermissionStore.__proto__[a] = () => true;
         });
