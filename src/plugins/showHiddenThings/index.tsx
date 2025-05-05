@@ -53,7 +53,8 @@ export const settings = definePluginSettings({
     showTimeouts: opt("Show member timeout icons in chat."),
     showInvitesPaused: opt("Show the invites paused tooltip in the server list."),
     showModView: opt("Show the member mod view context menu item in all servers."),
-    showServerSettings: opt("Show the Server Settings button."),
+    showServerSettings: opt("Show the server settings button."),
+    showMemberPage: opt("Show the member page in server settings."),
     hideUnreads: opt("Hide the unread badge."),
     showMode: {
         description: "The mode used to display hidden channels.",
@@ -77,6 +78,7 @@ function isUncategorized(objChannel: { channel: Channel; comparator: number; }) 
 
 export default definePlugin({
     name: "ShowHiddenThings",
+    tags: ["ShowHiddenChannels"],
     description: "Show elements that you do not have access to view. (Channels, Mod View, Server Settings, etc.)",
     authors: [Devs.BigDuck, Devs.AverageReactEnjoyer, Devs.D3SOX, Devs.Ven, Devs.Nuckyz, Devs.Nickyux, Devs.dzshn, Devs.Dolfies, Devs.Cootshk],
     settings,
@@ -341,12 +343,12 @@ export default definePlugin({
                 {
                     // Change the role permission check to CONNECT if the channel is locked
                     match: /ADMINISTRATOR\)\|\|(?<=context:(\i)}.+?)(?=(.+?)VIEW_CHANNEL)/,
-                    replace: (m, channel, permCheck) => `${m}!Vencord.Webpack.Common.PermissionStore.can(${CONNECT}n,${channel})?${permCheck}CONNECT):`
+                    replace: (m, channel, permCheck) => `${m}!$self.can(${CONNECT}n,${channel})?${permCheck}CONNECT):`
                 },
                 {
                     // Change the permissionOverwrite check to CONNECT if the channel is locked
                     match: /permissionOverwrites\[.+?\i=(?<=context:(\i)}.+?)(?=(.+?)VIEW_CHANNEL)/,
-                    replace: (m, channel, permCheck) => `${m}!Vencord.Webpack.Common.PermissionStore.can(${CONNECT}n,${channel})?${permCheck}CONNECT):`
+                    replace: (m, channel, permCheck) => `${m}!$self.can(${CONNECT}n,${channel})?${permCheck}CONNECT):`
                 },
                 {
                     // Include the @everyone role in the allowed roles list for Hidden Channels
@@ -551,8 +553,7 @@ export default definePlugin({
 
             if (channel.channelId) channel = ChannelStore.getChannel(channel.channelId);
             if (!channel || channel.isDM() || channel.isGroupDM() || channel.isMultiUserDM()) return false;
-
-            return !PermissionStore.can(PermissionsBits.VIEW_CHANNEL, channel) || checkConnect && !PermissionStore.can(PermissionsBits.CONNECT, channel);
+            return !this.can(PermissionsBits.VIEW_CHANNEL, channel) || checkConnect && !this.can(PermissionsBits.CONNECT, channel);
         } catch (e) {
             console.error("[ViewHiddenChannels#isHiddenChannel]: ", e);
             return false;
@@ -626,13 +627,20 @@ export default definePlugin({
             )}
         </Tooltip>
     ), { noop: true }),
+
+    can: (..._) => false, // overwritten in start()
+
     start() {
+        this.can = PermissionStore.can; // save original can function
+
         // ["can", "canAccessGuildSettings", "canAccessMemberSafetyPage", "canBasicChannel", "canImpersonateRole", "canManageUser", "canWithPartialContext", "isRoleHigher"]
-        var perms: string[] = [];
+        var perms: string[] = ["can", "canWithPartialContext"];
         if (settings.store.showServerSettings) { perms.push("canAccessGuildSettings"); }
+        if (settings.store.showMemberPage) { perms.push("canAccessMemberSafetyPage"); perms.push("canManageUser"); }
         // ["canAccessGuildSettings", "canAccessMemberSafetyPage", "canBasicChannel", "canImpersonateRole", "canManageUser", "canWithPartialContext", "isRoleHigher"]
         perms.forEach(a => {
             PermissionStore.__proto__[a] = () => true;
         });
+        console.log("Permission store: ", PermissionStore);
     }
 });
