@@ -18,7 +18,8 @@
 
 import { definePluginSettings } from "@api/Settings";
 import { Devs } from "@utils/constants";
-import definePlugin, { OptionType, PluginSettingDef } from "@utils/types";
+import definePlugin, { OptionType, PluginSettingDef, StartAt } from "@utils/types";
+import { PermissionStore } from "@webpack/common";
 
 const opt = (description: string) => ({
     type: OptionType.BOOLEAN,
@@ -37,7 +38,8 @@ export default definePlugin({
     name: "ShowHiddenThings",
     tags: ["ShowTimeouts", "ShowInvitesPaused", "ShowModView", "DisableDiscoveryFilters"],
     description: "Displays various hidden & moderator-only things regardless of permissions.",
-    authors: [Devs.Dolfies],
+    authors: [Devs.Dolfies, Devs.Cootshk],
+    startAt: StartAt.WebpackReady,
     settings,
 
     patches: [
@@ -83,5 +85,11 @@ export default definePlugin({
                 replace: "false"
             }
         }
-    ]
+    ], start() {
+        // ["can", "canAccessGuildSettings", "canAccessMemberSafetyPage", "canBasicChannel", "canImpersonateRole", "canManageUser", "canWithPartialContext", "isRoleHigher"]
+        ["canAccessGuildSettings", "canAccessMemberSafetyPage", "canBasicChannel", "canImpersonateRole", "canManageUser", "canWithPartialContext", "isRoleHigher"]
+            .forEach(a => {
+                PermissionStore.__proto__[a] = () => true;
+            });
+    }
 });

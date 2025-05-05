@@ -24,7 +24,7 @@ import ErrorBoundary from "@components/ErrorBoundary";
 import { Devs } from "@utils/constants";
 import { classes } from "@utils/misc";
 import { canonicalizeMatch } from "@utils/patches";
-import definePlugin, { OptionType } from "@utils/types";
+import definePlugin, { OptionType, PluginSettingDef } from "@utils/types";
 import { findByPropsLazy } from "@webpack";
 import { ChannelStore, PermissionsBits, PermissionStore, Tooltip } from "@webpack/common";
 import type { Channel, Role } from "discord-types/general";
@@ -42,13 +42,19 @@ const enum ShowMode {
 
 const CONNECT = 1n << 20n;
 
+const opt = (description: string) => ({
+    type: OptionType.BOOLEAN,
+    description,
+    default: true,
+    restartNeeded: true
+} satisfies PluginSettingDef);
+
 export const settings = definePluginSettings({
-    hideUnreads: {
-        description: "Hide Unreads",
-        type: OptionType.BOOLEAN,
-        default: true,
-        restartNeeded: true
-    },
+    showTimeouts: opt("Show member timeout icons in chat."),
+    showInvitesPaused: opt("Show the invites paused tooltip in the server list."),
+    showModView: opt("Show the member mod view context menu item in all servers."),
+    showServerSettings: opt("Show the Server Settings button."),
+    hideUnreads: opt("Hide the unread badge."),
     showMode: {
         description: "The mode used to display hidden channels.",
         type: OptionType.SELECT,
@@ -70,12 +76,54 @@ function isUncategorized(objChannel: { channel: Channel; comparator: number; }) 
 }
 
 export default definePlugin({
-    name: "ShowHiddenChannels",
-    description: "Show channels that you do not have access to view.",
-    authors: [Devs.BigDuck, Devs.AverageReactEnjoyer, Devs.D3SOX, Devs.Ven, Devs.Nuckyz, Devs.Nickyux, Devs.dzshn],
+    name: "ShowHiddenThings",
+    description: "Show elements that you do not have access to view. (Channels, Mod View, Server Settings, etc.)",
+    authors: [Devs.BigDuck, Devs.AverageReactEnjoyer, Devs.D3SOX, Devs.Ven, Devs.Nuckyz, Devs.Nickyux, Devs.dzshn, Devs.Dolfies, Devs.Cootshk],
     settings,
 
     patches: [
+        {
+            find: "showCommunicationDisabledStyles",
+            predicate: () => settings.store.showTimeouts,
+            replacement: {
+                match: /&&\i\.\i\.canManageUser\(\i\.\i\.MODERATE_MEMBERS,\i\.author,\i\)/,
+                replace: "",
+            },
+        },
+        {
+            find: "INVITES_DISABLED))||",
+            predicate: () => settings.store.showInvitesPaused,
+            replacement: {
+                match: /\i\.\i\.can\(\i\.\i.MANAGE_GUILD,\i\)/,
+                replace: "true",
+            },
+        },
+        {
+            find: /,checkElevated:!1}\),\i\.\i\)}(?<=getCurrentUser\(\);return.+?)/,
+            predicate: () => settings.store.showModView,
+            replacement: {
+                match: /return \i\.\i\(\i\.\i\(\{user:\i,context:\i,checkElevated:!1\}\),\i\.\i\)/,
+                replace: "return true",
+            }
+        },
+        // fixes a bug where Members page must be loaded to see highest role, why is Discord depending on MemberSafetyStore.getEnhancedMember for something that can be obtained here?
+        {
+            find: "#{intl::GUILD_MEMBER_MOD_VIEW_PERMISSION_GRANTED_BY_ARIA_LABEL}),allowOverflow:",
+            predicate: () => settings.store.showModView,
+            replacement: {
+                match: /(role:)\i(?=,guildId.{0,100}role:(\i\[))/,
+                replace: "$1$2arguments[0].member.highestRoleId]",
+            }
+        },
+        // allows you to open mod view on yourself
+        {
+            find: 'action:"PRESS_MOD_VIEW",icon:',
+            predicate: () => settings.store.showModView,
+            replacement: {
+                match: /\i(?=\?null)/,
+                replace: "false"
+            }
+        },
         {
             // RenderLevel defines if a channel is hidden, collapsed in category, visible, etc
             find: '"placeholder-channel-id"',
@@ -577,5 +625,14 @@ export default definePlugin({
                 </svg>
             )}
         </Tooltip>
-    ), { noop: true })
+    ), { noop: true }),
+    start() {
+        // ["can", "canAccessGuildSettings", "canAccessMemberSafetyPage", "canBasicChannel", "canImpersonateRole", "canManageUser", "canWithPartialContext", "isRoleHigher"]
+        var perms: string[] = [];
+        if (settings.store.showServerSettings) { perms.push("canAccessGuildSettings"); }
+        // ["canAccessGuildSettings", "canAccessMemberSafetyPage", "canBasicChannel", "canImpersonateRole", "canManageUser", "canWithPartialContext", "isRoleHigher"]
+        perms.forEach(a => {
+            PermissionStore.__proto__[a] = () => true;
+        });
+    }
 });
