@@ -24,7 +24,7 @@ import ErrorBoundary from "@components/ErrorBoundary";
 import { Devs } from "@utils/constants";
 import { classes } from "@utils/misc";
 import { canonicalizeMatch } from "@utils/patches";
-import definePlugin, { OptionType, PluginSettingDef } from "@utils/types";
+import definePlugin, { OptionType, PluginSettingDef, StartAt } from "@utils/types";
 import { findByPropsLazy } from "@webpack";
 import { ChannelStore, PermissionsBits, PermissionStore, Tooltip } from "@webpack/common";
 import type { Channel, Role } from "discord-types/general";
@@ -82,6 +82,7 @@ export default definePlugin({
     description: "Show elements that you do not have access to view. (Channels, Mod View, Server Settings, etc.)",
     authors: [Devs.BigDuck, Devs.AverageReactEnjoyer, Devs.D3SOX, Devs.Ven, Devs.Nuckyz, Devs.Nickyux, Devs.dzshn, Devs.Dolfies, Devs.Cootshk],
     settings,
+    startAt: StartAt.WebpackReady,
 
     patches: [
         {
@@ -651,6 +652,7 @@ export default definePlugin({
 
     start() {
 
+        // Available checks:
         // ["can", "canAccessGuildSettings", "canAccessMemberSafetyPage", "canBasicChannel", "canImpersonateRole", "canManageUser", "canWithPartialContext", "isRoleHigher"]
         var perms: string[] = ["can", "canWithPartialContext"];
         if (settings.store.showServerSettings) {
@@ -666,6 +668,5 @@ export default definePlugin({
             this[a] = PermissionStore.__proto__[a];
             PermissionStore.__proto__[a] = () => true;
         });
-        console.log("Permission store: ", PermissionStore);
     }
 });
