@@ -544,6 +544,24 @@ export default definePlugin({
                 match: /(getVoiceStateForUser.{0,150}?)&&\i\.\i\.canWithPartialContext.{0,20}VIEW_CHANNEL.+?}\)(?=\?)/,
                 replace: "$1"
             }
+        },
+        {
+            find: "}getSlowmodeCooldownGuess(",
+            replacement: {
+                // Prevent sending messages while in slow mode
+                match: /\i\.\i.can\((\i)\.(\i)\.MANAGE_CHANNELS,(\i)\)\|\|\i\.\i\.can\(\i\.\i\.MANAGE_MESSAGES,\i\):\i\.\i\.can\(\i\.\i\.MANAGE_THREADS,\i\)/,
+                replace: "$self.can($1.$2.MANAGE_CHANNELS,$3)||$self.can($1.$2.MANAGE_MESSAGES,$3):$self.can($1.$2.MANAGE_THREADS,$3)"
+            },
+            noWarn: true
+        },
+        {
+            find: "(\"SlowmodeIndicator\"),_=(0,",
+            replacement: {
+                // Show the slow mode timer
+                match: /\i\.\i\.can\((\i)\.(\i)\.MANAGE_THREADS,(\i)\):\i\.\i\.can\(\i\.\i\.MANAGE_CHANNELS,\i\)\|\|\i\.\i\.can\(\i\.\i\.MANAGE_MESSAGES,\i\)/,
+                replace: "$self.can($1.$2.MANAGE_THREADS,$3):$self.can($1.$2.MANAGE_CHANNELS,$3)||$self.can($1.$2.MANAGE_MESSAGES,$3)"
+            },
+            noWarn: true
         }
     ],
 
