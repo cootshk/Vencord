@@ -565,18 +565,54 @@ export default definePlugin({
             noWarn: true
         },
         {
-            find: '"guildId cannot be null here"',
+            // lazily loaded upon opening roles menu
+            find: "guildId cannot be null here",
             replacement: {
-                match: /\(\)=>!(\i\.\i)\.isRoleHigher\((\i),(\i),(\i)\)/,
-                replace: "() => ($self.canEditRole($2,$3,$4))"
-            }
+                match: /\i\.\i\.isRoleHigher/,
+                replace: "$self.canEditRole"
+            },
+            noWarn: true
         },
         {
             find: "overflow-add-roles",
             replacement: {
-                match: /\i\.\i\.isRoleHigher\((\i),(\i),(\i)\)/,
-                replace: "$self.canEditRole($1,$2,$3)"
+                // Roles sidebar (while editing a role)
+                match: /\i\.\i\.isRoleHigher/,
+                replace: "$self.canEditRole"
             }
+        },
+        {
+            find: 'targetElementRef:O,position:"bottom",align:"center",',
+            replacement: {
+                match: /&&\i\.\i\.isRoleHigher/,
+                replace: "&&$self.canEditRole"
+            }
+        },
+        {
+            find: "}canImpersonateRole(",
+            replacement: {
+                // CanImpersonateRole permission
+                match: /this\.isRoleHigher/,
+                replace: "$self.canEditRole"
+            }
+        },
+        {
+            // also lazily loaded upon opening roles menu
+            find: "var r=n(255367),i=n(73800),l=n(442837),s=n(481060),a=n(496675),o=n(388032);",
+            replacement: {
+                // Roles in the roles menu
+                match: /!\i\.\i\.isRoleHigher/,
+                replace: "!$self.canEditRole"
+            }
+        },
+        {
+            find: "id:\"delete-role\"",
+            replacement: {
+                // Delete role dropdown
+                match: /!\i\.\i\.isRoleHigher/,
+                replace: "!$self.canEditRole"
+            },
+            noWarn: true
         }
     ],
 
@@ -594,6 +630,7 @@ export default definePlugin({
     },
     canEditRole(server: Guild, userRole: Role, otherRole: Role) {
         console.log("canEditRole", server, userRole, otherRole);
+        console.log("canEditRole: ", this.isRoleHigher(server, userRole, otherRole));
         if (this.can(PermissionsBits.MANAGE_ROLES, server)) {
             console.log("canEditRole: true");
             return this.isRoleHigher(server, userRole, otherRole);
@@ -693,6 +730,7 @@ export default definePlugin({
             this[a] = PermissionStore.__proto__[a];
             PermissionStore.__proto__[a] = () => true;
         });
+        // PermissionStore.__proto__.isRoleHigher = () => { throw new Error("WHYYYYYYY"); };
 
         // isRoleHigher (warning: may crash your computer... oops.)
         // PermissionStore.__proto__.isRoleHigher = this.canEditRole;
