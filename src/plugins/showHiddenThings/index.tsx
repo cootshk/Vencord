@@ -565,52 +565,12 @@ export default definePlugin({
             noWarn: true
         },
         {
-            // lazily loaded upon opening roles menu
-            find: "guildId cannot be null here",
+            all: true,
+            find: "isRoleHigher",
             replacement: {
-                match: /\i\.\i\.isRoleHigher/,
-                replace: "$self.canEditRole"
-            },
-            noWarn: true
-        },
-        {
-            find: "overflow-add-roles",
-            replacement: {
-                // Roles sidebar (while editing a role)
-                match: /\i\.\i\.isRoleHigher/,
-                replace: "$self.canEditRole"
-            }
-        },
-        {
-            find: 'targetElementRef:O,position:"bottom",align:"center",',
-            replacement: {
-                match: /&&\i\.\i\.isRoleHigher/,
-                replace: "&&$self.canEditRole"
-            }
-        },
-        {
-            find: "}canImpersonateRole(",
-            replacement: {
-                // CanImpersonateRole permission
-                match: /this\.isRoleHigher/,
-                replace: "$self.canEditRole"
-            }
-        },
-        {
-            // also lazily loaded upon opening roles menu
-            find: "var r=n(255367),i=n(73800),l=n(442837),s=n(481060),a=n(496675),o=n(388032);",
-            replacement: {
-                // Roles in the roles menu
-                match: /!\i\.\i\.isRoleHigher/,
-                replace: "!$self.canEditRole"
-            }
-        },
-        {
-            find: "id:\"delete-role\"",
-            replacement: {
-                // Delete role dropdown
-                match: /!\i\.\i\.isRoleHigher/,
-                replace: "!$self.canEditRole"
+                // Lock roles you can't edit
+                match: /\i\.\i\.isRoleHigher\(/,
+                replace: "$self.canEditRole("
             },
             noWarn: true
         }
@@ -630,14 +590,13 @@ export default definePlugin({
     },
     canEditRole(server: Guild, userRole: Role, otherRole: Role) {
         console.log("canEditRole", server, userRole, otherRole);
-        console.log("canEditRole: ", this.isRoleHigher(server, userRole, otherRole));
+        console.log("canEditRole: ", PermissionStore.isRoleHigher(server, userRole, otherRole));
         if (this.can(PermissionsBits.MANAGE_ROLES, server)) {
             console.log("canEditRole: true");
-            return this.isRoleHigher(server, userRole, otherRole);
+            return PermissionStore.isRoleHigher(server, userRole, otherRole);
         }
         console.log("canEditRole: false");
         return false;
-        // this.can(${PermissionsBits.MANAGE_ROLES},$3)?!$self.isRoleHigher($3,$4,$5):true
     },
 
     resolveGuildChannels(channels: Record<string | number, Array<{ channel: Channel; comparator: number; }> | string | number>, shouldIncludeHidden: boolean) {
@@ -723,16 +682,11 @@ export default definePlugin({
                 "canAccessMemberSafetyPage",
                 "canManageUser",
                 "canImpersonateRole",
-                "isRoleHigher"
             ]);
         }
         perms.forEach(a => {
             this[a] = PermissionStore.__proto__[a];
             PermissionStore.__proto__[a] = () => true;
         });
-        // PermissionStore.__proto__.isRoleHigher = () => { throw new Error("WHYYYYYYY"); };
-
-        // isRoleHigher (warning: may crash your computer... oops.)
-        // PermissionStore.__proto__.isRoleHigher = this.canEditRole;
     }
 });
