@@ -27,7 +27,7 @@ import { canonicalizeMatch } from "@utils/patches";
 import definePlugin, { OptionType, PluginSettingDef, StartAt } from "@utils/types";
 import { findByPropsLazy } from "@webpack";
 import { ChannelStore, PermissionsBits, PermissionStore, Tooltip } from "@webpack/common";
-import type { Channel, Role } from "discord-types/general";
+import type { Channel, Guild, Role } from "discord-types/general";
 
 import HiddenChannelLockScreen from "./components/HiddenChannelLockScreen";
 
@@ -556,13 +556,27 @@ export default definePlugin({
             noWarn: true
         },
         {
-            find: "(\"SlowmodeIndicator\"),_=(0,",
+            find: '("SlowmodeIndicator"),_=(0,',
             replacement: {
                 // Show the slow mode timer
                 match: /\i\.\i\.can\((\i)\.(\i)\.MANAGE_THREADS,(\i)\):\i\.\i\.can\(\i\.\i\.MANAGE_CHANNELS,\i\)\|\|\i\.\i\.can\(\i\.\i\.MANAGE_MESSAGES,\i\)/,
                 replace: "$self.can($1.$2.MANAGE_THREADS,$3):$self.can($1.$2.MANAGE_CHANNELS,$3)||$self.can($1.$2.MANAGE_MESSAGES,$3)"
             },
             noWarn: true
+        },
+        {
+            find: '"guildId cannot be null here"',
+            replacement: {
+                match: /\(\)=>!(\i\.\i)\.isRoleHigher\((\i),(\i),(\i)\)/,
+                replace: "() => ($self.canEditRole($2,$3,$4))"
+            }
+        },
+        {
+            find: "overflow-add-roles",
+            replacement: {
+                match: /\i\.\i\.isRoleHigher\((\i),(\i),(\i)\)/,
+                replace: "$self.canEditRole($1,$2,$3)"
+            }
         }
     ],
 
@@ -577,6 +591,16 @@ export default definePlugin({
             console.error("[ViewHiddenChannels#isHiddenChannel]: ", e);
             return false;
         }
+    },
+    canEditRole(server: Guild, userRole: Role, otherRole: Role) {
+        console.log("canEditRole", server, userRole, otherRole);
+        if (this.can(PermissionsBits.MANAGE_ROLES, server)) {
+            console.log("canEditRole: true");
+            return this.isRoleHigher(server, userRole, otherRole);
+        }
+        console.log("canEditRole: false");
+        return false;
+        // this.can(${PermissionsBits.MANAGE_ROLES},$3)?!$self.isRoleHigher($3,$4,$5):true
     },
 
     resolveGuildChannels(channels: Record<string | number, Array<{ channel: Channel; comparator: number; }> | string | number>, shouldIncludeHidden: boolean) {
@@ -649,6 +673,7 @@ export default definePlugin({
 
     // stubs for real permission checks
     can: (..._) => false,
+    isRoleHigher: (..._) => false,
 
     start() {
 
@@ -668,5 +693,8 @@ export default definePlugin({
             this[a] = PermissionStore.__proto__[a];
             PermissionStore.__proto__[a] = () => true;
         });
+
+        // isRoleHigher (warning: may crash your computer... oops.)
+        // PermissionStore.__proto__.isRoleHigher = this.canEditRole;
     }
 });
