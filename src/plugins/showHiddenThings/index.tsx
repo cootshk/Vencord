@@ -573,6 +573,50 @@ export default definePlugin({
                 replace: "$self.canEditRole("
             },
             noWarn: true
+        },
+        {
+            all: true,
+            predicate: () => settings.store.showServerSettings,
+            find: "canAccessGuildSettings",
+            replacement: {
+                // Show the server settings button
+                match: /\i\.\i\.canAccessGuildSettings\((\i,)*(\i)?\)/,
+                replace: "true"
+            },
+            noWarn: true
+        },
+        {
+            all: true,
+            predicate: () => settings.store.showServerSettings,
+            find: "canAccessMemberSafetyPage",
+            replacement: {
+                // Show the members button
+                match: /\i\.\i\.canAccessMemberSafetyPage\((\i,)*(\i)?\)/,
+                replace: "true"
+            },
+            noWarn: true
+        },
+        {
+            all: true,
+            predicate: () => settings.store.showServerSettings,
+            find: "canManageUser",
+            replacement: {
+                // Lets you press edit user
+                match: /\i\.\i\.canManageUser\((\i,)*(\i)?\)/,
+                replace: "true"
+            },
+            noWarn: true
+        },
+        {
+            all: true,
+            predicate: () => settings.store.showServerSettings,
+            find: "canImpersonateRoles",
+            replacement: {
+                // Lets you press "view server as role"
+                match: /\i\.\i\.canImpersonateRoles\((\i,)*(\i)?\)/,
+                replace: "true"
+            },
+            noWarn: true
         }
     ],
 
@@ -589,13 +633,9 @@ export default definePlugin({
         }
     },
     canEditRole(server: Guild, userRole: Role, otherRole: Role) {
-        console.log("canEditRole", server, userRole, otherRole);
-        console.log("canEditRole: ", PermissionStore.isRoleHigher(server, userRole, otherRole));
         if (this.can(PermissionsBits.MANAGE_ROLES, server)) {
-            console.log("canEditRole: true");
             return PermissionStore.isRoleHigher(server, userRole, otherRole);
         }
-        console.log("canEditRole: false");
         return false;
     },
 
@@ -669,24 +709,24 @@ export default definePlugin({
 
     // stubs for real permission checks
     can: (..._) => false,
-    isRoleHigher: (..._) => false,
 
     start() {
 
         // Available checks:
         // ["can", "canAccessGuildSettings", "canAccessMemberSafetyPage", "canBasicChannel", "canImpersonateRole", "canManageUser", "canWithPartialContext", "isRoleHigher"]
         var perms: string[] = ["can", "canWithPartialContext"];
-        if (settings.store.showServerSettings) {
-            perms = perms.concat([
-                "canAccessGuildSettings",
-                "canAccessMemberSafetyPage",
-                "canManageUser",
-                "canImpersonateRole",
-            ]);
-        }
+        // if (settings.store.showServerSettings) {
+        //     perms = perms.concat([
+        //         // "canAccessGuildSettings",
+        //         // "canAccessMemberSafetyPage",
+        //         // "canManageUser",
+        //         // "canImpersonateRole",
+        //     ]);
+        // }
         perms.forEach(a => {
             this[a] = PermissionStore.__proto__[a];
             PermissionStore.__proto__[a] = () => true;
         });
+        this.can = PermissionStore.__proto__.can; // for when I comment stuff out
     }
 });
