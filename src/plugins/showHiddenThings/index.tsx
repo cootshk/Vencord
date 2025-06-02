@@ -569,8 +569,8 @@ export default definePlugin({
             find: "isRoleHigher",
             replacement: {
                 // Lock roles you can't edit
-                match: /\i\.\i\.isRoleHigher\(/,
-                replace: "$self.canEditRole("
+                match: /\i\.\i\.isRoleHigher\((\i),(\i),(\i)\)/,
+                replace: (server, userRole, otherRole) => `PermissionStore.isRoleHigher(${server}, ${userRole}, ${otherRole}) && PermissionStore.can(PermissionsBits.MANAGE_ROLES, ${server})`,
             },
             noWarn: true
         },
@@ -617,7 +617,26 @@ export default definePlugin({
                 replace: "true"
             },
             noWarn: true
-        }
+        },
+        {
+            all: true,
+            find: "can",
+            replacement: {
+                // The generic permission check
+                match: /(\i)\.(\i)\.can\(((\i,)*(\i)?)\)/,
+                replace: "true"
+            },
+            noWarn: true
+        },
+        // {
+        //     all: true,
+        //     find: "canWithPartialContext",
+        //     replacement: {
+        //         match: /\i\.\i\.canWithPartialContext\((\i,)*(\i)?\)/,
+        //         replace: "true"
+        //     },
+        //     noWarn: true
+        // }
     ],
 
     isHiddenChannel(channel: Channel & { channelId?: string; }, checkConnect = false) {
@@ -626,17 +645,18 @@ export default definePlugin({
 
             if (channel.channelId) channel = ChannelStore.getChannel(channel.channelId);
             if (!channel || channel.isDM() || channel.isGroupDM() || channel.isMultiUserDM()) return false;
-            return !this.can(PermissionsBits.VIEW_CHANNEL, channel) || checkConnect && !this.can(PermissionsBits.CONNECT, channel);
+            return !PermissionStore.can(PermissionsBits.VIEW_CHANNEL, channel) || checkConnect && !PermissionStore.can(PermissionsBits.CONNECT, channel);
         } catch (e) {
             console.error("[ViewHiddenChannels#isHiddenChannel]: ", e);
             return false;
         }
     },
     canEditRole(server: Guild, userRole: Role, otherRole: Role) {
-        if (this.can(PermissionsBits.MANAGE_ROLES, server)) {
-            return PermissionStore.isRoleHigher(server, userRole, otherRole);
-        }
-        return false;
+        return PermissionStore.isRoleHigher(server, userRole, otherRole) && PermissionStore.can(PermissionsBits.MANAGE_ROLES, server);
+        // if (this.can(PermissionsBits.MANAGE_ROLES, server)) {
+        //     return PermissionStore.isRoleHigher(server, userRole, otherRole);
+        // }
+        // return false;
     },
 
     resolveGuildChannels(channels: Record<string | number, Array<{ channel: Channel; comparator: number; }> | string | number>, shouldIncludeHidden: boolean) {
@@ -727,6 +747,7 @@ export default definePlugin({
             this[a] = PermissionStore.__proto__[a];
             PermissionStore.__proto__[a] = () => true;
         });
-        this.can = PermissionStore.__proto__.can; // for when I comment stuff out
+        this.ps = PermissionStore;
+        this.can = PermissionStore.can; // for when I comment stuff out
     }
 });
