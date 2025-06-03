@@ -42,9 +42,10 @@ export default definePlugin({
             find: "app-spinner",
             replacement: {
                 match: /children:\i/,
-                replace: "children:$self.video(settings.store.videoURL, settings.store.videoType)",
+                replace: "children:$self.video($self.settings.store.videoURL, $self.settings.store.videoType)",
             }
         }
     ],
-    settings
+    settings,
+    video,
 });
