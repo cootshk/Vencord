@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+import { definePluginSettings } from "@api/Settings";
 import { Devs } from "@utils/constants";
-import definePlugin from "@utils/types";
+import definePlugin, { OptionType } from "@utils/types";
 import { PermissionsBits, PermissionStore } from "@webpack/common";
 import { Channel } from "discord-types/general";
+
 
 const DEBUG_LOGGING = false;
 
@@ -21,11 +23,63 @@ const perms_list = [
     // Lets you press View Server as Role
     "canImpersonateRoles",
 ];
+const server_perms_list = [
+    "ADMINISTRATOR",
+    "MANAGE_CHANNELS",
+    "MANAGE_EVENTS",
+    "MANAGE_GUILD",
+    "MANAGE_GUILD_EXPRESSIONS",
+    "MANAGE_MESSAGES",
+    "MANAGE_NICKNAMES",
+    "MANAGE_ROLES",
+    "MANAGE_THREADS",
+    "MANAGE_WEBHOOKS",
+];
+const make_permission_settings = () => {
+    const settings = {};
+    for (const perm of server_perms_list) {
+        // name has to be in camelCase
+        settings[perm.toLowerCase().replace(/_(.)/g, letter => letter.toUpperCase())] = {
+            type: OptionType.BOOLEAN,
+            name: perm,
+            description: `Allows you to see ${perm.replace(/MANAGE_/i, "").toLowerCase().replace(/s$/i, "")} related settings.`,
+            defaultValue: perm === "MANAGE_ROLES",
+            // hidden: false,
+            // restartNeeded: false,
+            internalName: perm
+        };
+    }
+    return settings;
+};
+const settings = definePluginSettings({
+    permissionTogglesSection: {
+        type: OptionType.COMPONENT,
+        component: props => {
+            return (<div>
+                <h1 style={{ color: "var(--header-secondary)" }}>Server Permissions</h1>
+                {/* line */}
+                <hr />
+            </div>);
+        },
+    },
+    test: {
+        type: OptionType.BOOLEAN,
+        name: "Test",
+        description: "Test setting for intellisense.",
+        defaultValue: true,
+        hidden: true,
+        restartNeeded: false,
+        internalName: "test_setting",
+    },
+    ...make_permission_settings(),
+    // Permissions
+});
 
 export default definePlugin({
     name: "ShowServerSettings",
     description: "Allows you to view the settings of any server.",
     authors: [Devs.Cootshk],
+    settings,
     patches: [
         {
             // Theoretically can be replaed with anything in perms_list
@@ -38,6 +92,7 @@ export default definePlugin({
                 },
                 */
                 perms_list.map(perm => {
+                    console.log(`Patching permission: ${perm}`);
                     return {
                         match: new RegExp(`\\}${perm}\\(((\\i,)*\\i?)\\){return`),
                         replace: `}${perm}($1){return true||`,
