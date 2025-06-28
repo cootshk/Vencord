@@ -24,7 +24,6 @@ const perms_list = [
     "canImpersonateRoles",
 ];
 const server_perms_list = [
-    "ADMINISTRATOR",
     "MANAGE_CHANNELS",
     "MANAGE_EVENTS",
     "MANAGE_GUILD",
@@ -39,16 +38,18 @@ const make_permission_settings = () => {
     const settings = {};
     for (const perm of server_perms_list) {
         // name has to be in camelCase
-        settings[perm.toLowerCase().replace(/_(.)/g, letter => letter.toUpperCase())] = {
+        const permName = perm.replace(/MANAGE_/gi, "").toLowerCase().replace(/s$/i, "");
+        settings[permName] = {
             type: OptionType.BOOLEAN,
-            name: perm,
-            description: `Allows you to see ${perm.replace(/MANAGE_/i, "").toLowerCase().replace(/s$/i, "")} related settings.`,
+            name: `${permName[0].toUpperCase()}${permName.slice(1)}`,
+            description: `Allows you to see ${permName} related settings.`,
             defaultValue: perm === "MANAGE_ROLES",
             // hidden: false,
             // restartNeeded: false,
             internalName: perm
         };
     }
+    console.log("Generated permission settings:", settings);
     return settings;
 };
 const settings = definePluginSettings({
@@ -70,6 +71,14 @@ const settings = definePluginSettings({
         hidden: true,
         restartNeeded: false,
         internalName: "test_setting",
+    },
+    administrator: {
+        type: OptionType.BOOLEAN,
+        name: "Administrator",
+        description: "Allows you to see all server settings.",
+        defaultValue: false,
+        restartNeeded: false,
+        internalName: "ADMINISTRATOR",
     },
     ...make_permission_settings(),
     // Permissions
