@@ -31,3 +31,9 @@
 [submodule "src/userplugins/multistickers"]
 	path = src/userplugins/multistickers
 	url = https://github.com/voidfill/multistickers
+[submodule "src/userplugins/vc-followUser"]
+	path = src/userplugins/vc-followUser
+	url = https://github.com/D3SOX/vc-followUser
+[submodule "src/userplugins/vc-ignoreTerms"]
+	path = src/userplugins/vc-ignoreTerms
+	url = https://github.com/D3SOX/vc-ignoreTerms
