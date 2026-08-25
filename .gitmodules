@@ -10,9 +10,6 @@
 [submodule "src/userplugins/vc-voiceChatUtilities"]
 	path = src/userplugins/vc-voiceChatUtilities
 	url = https://github.com/D3SOX/vc-voiceChatUtilities.git
-[submodule "src/userplugins/ThemeLibrary"]
-	path = src/userplugins/ThemeLibrary
-	url = https://github.com/Faf4a/ThemeLibrary.git
 [submodule "src/userplugins/betterForwardMeta"]
 	path = src/userplugins/betterForwardMeta
 	url = https://git.nin0.dev/userplugins/betterForwardMeta.git
