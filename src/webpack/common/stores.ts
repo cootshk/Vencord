@@ -16,7 +16,9 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+import { ConstEnumToRuntimeEnum } from "@utils/types";
 import * as t from "@vencord/discord-types";
+import * as enums from "@vencord/discord-types/enums";
 import { findByCodeLazy, findByPropsLazy } from "@webpack";
 
 import { waitForStore } from "./internal";
@@ -25,11 +27,9 @@ export const Flux: t.Flux = findByPropsLazy("connectStores");
 
 export type GenericStore = t.FluxStore & Record<string, any>;
 
-export const DraftType = findByPropsLazy("ChannelMessage", "SlashCommand");
+export const DraftType: ConstEnumToRuntimeEnum<typeof enums.DraftType> = findByPropsLazy("ChannelMessage", "SlashCommand");
 
-export let MessageStore: Omit<t.MessageStore, "getMessages"> & GenericStore & {
-    getMessages(chanId: string): any;
-};
+export let MessageStore: t.MessageStore;
 
 export let PermissionStore: t.PermissionStore;
 export let GuildChannelStore: t.GuildChannelStore;
@@ -80,6 +80,12 @@ export let LocaleStore: t.LocaleStore;
 export let RTCConnectionStore: t.RTCConnectionStore;
 export let SoundboardStore: t.SoundboardStore;
 export let PopoutWindowStore: t.PopoutWindowStore;
+export let ApplicationCommandIndexStore: t.ApplicationCommandIndexStore;
+export let EditMessageStore: t.EditMessageStore;
+export let ExperimentStore: t.ExperimentStore;
+export let UserAffinitiesStore: t.UserAffinitiesStore;
+export let ApplicationStreamingStore: t.ApplicationStreamingStore;
+export let ApplicationStreamPreviewStore: t.ApplicationStreamPreviewStore;
 
 /**
  * @see jsdoc of {@link t.useStateFromStores}
@@ -132,6 +138,12 @@ waitForStore("RTCConnectionStore", m => RTCConnectionStore = m);
 waitForStore("SoundboardStore", m => SoundboardStore = m);
 waitForStore("PopoutWindowStore", m => PopoutWindowStore = m);
 waitForStore("PendingReplyStore", m => PendingReplyStore = m);
+waitForStore("ApplicationCommandIndexStore", m => ApplicationCommandIndexStore = m);
+waitForStore("EditMessageStore", m => EditMessageStore = m);
+waitForStore("ExperimentStore", m => ExperimentStore = m);
+waitForStore("UserAffinitiesV2Store", m => UserAffinitiesStore = m);
+waitForStore("ApplicationStreamingStore", m => ApplicationStreamingStore = m);
+waitForStore("ApplicationStreamPreviewStore", m => ApplicationStreamPreviewStore = m);
 waitForStore("ThemeStore", m => {
     ThemeStore = m;
     // Importing this directly causes all webpack commons to be imported, which can easily cause circular dependencies.

@@ -138,7 +138,7 @@ export default definePlugin({
     name: "BetterFolders",
     description: "Shows server folders on dedicated sidebar and adds folder related improvements",
     authors: [Devs.juby, Devs.AutumnVN, Devs.Nuckyz],
-
+    tags: ["Organisation", "Servers", "Appearance"],
     settings,
 
     patches: [
@@ -197,7 +197,7 @@ export default definePlugin({
                 {
                     // Modify the expanded prop to use the boolean if the above patch fails, or check if the folder is expanded from the list if it succeeds
                     // Also export the list of expanded folders to the child folder component if the patch above succeeds, else export undefined
-                    match: /(?<=folderNode:(\i),expanded:)\i(?=,)/,
+                    match: /(?<=\.\.\.\i,folderNode:(\i),expanded:)\i(?=,)/,
                     replace: (isExpandedOrExpandedIds, folderNote) => ""
                         + `typeof ${isExpandedOrExpandedIds}==="boolean"?${isExpandedOrExpandedIds}:${isExpandedOrExpandedIds}.has(${folderNote}.id),`
                         + `betterFoldersExpandedIds:${isExpandedOrExpandedIds} instanceof Set?${isExpandedOrExpandedIds}:void 0`
@@ -213,8 +213,8 @@ export default definePlugin({
                 // If we are rendering the normal GuildsBar sidebar, we make Discord think the folder is always collapsed to show better icons (the mini guild icons) and avoid transitions
                 {
                     predicate: () => settings.store.keepIcons,
-                    match: /(?<=let ?(?:\i,)*?{folderNode:\i,setNodeRef:\i,.+?expanded:(\i),.+?;)(?=let)/,
-                    replace: (_, isExpanded) => `${isExpanded}=!!arguments[0]?.isBetterFolders&&${isExpanded};`
+                    match: /let ?(?:\i,)*?{folderNode:\i,setNodeRef:\i,.+?expanded:(\i),.+?;(?=let)/,
+                    replace: (m, isExpanded) => `${m}${isExpanded}=!!arguments[0]?.isBetterFolders&&${isExpanded};`
                 },
                 // Disable expanding and collapsing folders transition in the normal GuildsBar sidebar
                 {
@@ -268,7 +268,7 @@ export default definePlugin({
             predicate: () => settings.store.closeAllHomeButton,
             replacement: {
                 // Close all folders when clicking the home button
-                match: /(?<=onClick:\(\)=>{)(?=.{0,300}"discodo")/,
+                match: /(?<=onClick:(?:function)?\(\)(?:=>)?{)(?=.{0,300}"discodo")/,
                 replace: "$self.closeFolders();"
             }
         }

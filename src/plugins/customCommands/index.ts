@@ -18,7 +18,7 @@
 
 import "./styles.css";
 
-import { ApplicationCommandInputType, ApplicationCommandOptionType, findOption, registerCommand, sendBotMessage } from "@api/Commands";
+import { ApplicationCommandInputType, ApplicationCommandOptionType, findOption, registerCommand, sendBotMessage, unregisterCommand } from "@api/Commands";
 import { migratePluginSettings } from "@api/Settings";
 import { Devs } from "@utils/constants";
 import { sendMessage } from "@utils/discord";
@@ -91,15 +91,17 @@ migratePluginSettings("CustomCommands", "MessageTags");
 export default definePlugin({
     name: "CustomCommands",
     description: "Allows you to create custom slash commands / tags",
-    tags: ["MessageTags"],
+    searchTerms: ["MessageTags"],
     authors: [Devs.Ven, Devs.Luna,],
+    tags: ["Commands", "Customisation", "Utility"],
     settings,
 
-    async start() {
-        const tags = getTags();
-        for (const tagName in tags) {
-            registerTagCommand(tags[tagName]);
-        }
+    start() {
+        getTags().forEach(registerTagCommand);
+    },
+
+    stop() {
+        getTags().forEach(tag => unregisterCommand(tag.name));
     },
 
     commands: [
@@ -159,7 +161,7 @@ export default definePlugin({
                     }
 
                     case "list": {
-                        const content = Object.values(getTags())
+                        const content = getTags()
                             .map(tag => `\`${tag.name}\`: ${tag.message.slice(0, 72).replaceAll("\\n", " ")}${tag.message.length > 72 ? "..." : ""}`)
                             .join("\n");
 

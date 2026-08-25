@@ -2,6 +2,22 @@ import type { ComponentType, CSSProperties, ForwardRefRenderFunction, MouseEvent
 
 type RC<C> = ComponentType<PropsWithChildren<C & Record<string, any>>>;
 
+type LeadingAccessory =
+    | {
+        type: "icon";
+        icon: ComponentType<any>;
+    }
+    | {
+        type: "emoji";
+        emojiId?: string;
+        src?: string;
+        animated?: boolean;
+    }
+    | {
+        type: "image";
+        src: string;
+    };
+
 export interface Menu {
     Menu: RC<{
         navId: string;
@@ -20,6 +36,7 @@ export interface Menu {
         label: ReactNode;
         action?(e: MouseEvent): void;
         icon?: ComponentType<any>;
+        leadingAccessory?: LeadingAccessory;
 
         color?: string;
         render?: ComponentType<any>;
@@ -50,10 +67,10 @@ export interface Menu {
         control: ForwardRefRenderFunction<any, any>;
     }>;
     MenuSliderControl: RC<{
-        minValue: number,
-        maxValue: number,
-        value: number,
-        onChange(value: number): void,
+        minValue?: number,
+        maxValue?: number,
+        value?: number,
+        onChange?(value: number): void,
         renderValue?(value: number): string,
     }>;
     MenuSearchControl: RC<{
@@ -77,4 +94,3 @@ export interface ContextMenuApi {
         options?: { enableSpellCheck?: boolean; }
     ): void;
 }
-
